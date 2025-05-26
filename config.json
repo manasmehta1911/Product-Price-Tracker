@@ -1,0 +1,8 @@
+{
+  "email_sender": "manasproject1911@zohomail.in",
+  "email_password": "infotact",
+  "email_receiver": "manasmehta191103@gmail.com",
+  "price_threshold": 25.00,
+  "smtp_server": "smtp.zoho.in",
+  "smtp_port": 465
+}
