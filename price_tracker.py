@@ -1,4 +1,5 @@
 import json
+import csv
 import requests
 from bs4 import BeautifulSoup
 import smtplib
@@ -6,6 +7,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import schedule
 import time
+from datetime import datetime
 
 # === LOAD CONFIG ===
 with open('config.json') as f:
@@ -29,7 +31,7 @@ def scrape_all_books():
         print(f"Scraping page {page}")
         response = requests.get(url)
         if response.status_code != 200:
-            break  # No more pages
+            break
         soup = BeautifulSoup(response.content, 'html.parser')
         articles = soup.select('article.product_pod')
         if not articles:
@@ -46,6 +48,14 @@ def scrape_all_books():
             books.append({'title': title, 'price': price, 'url': full_url})
         page += 1
     return books
+
+# === SAVE TO CSV ===
+def save_books_to_csv(books, filename):
+    with open(filename, mode='w', newline='', encoding='utf-8') as file:
+        writer = csv.DictWriter(file, fieldnames=['title', 'price', 'url'])
+        writer.writeheader()
+        writer.writerows(books)
+    print(f"Saved {len(books)} books to {filename}")
 
 # === EMAIL ALERT ===
 def send_email_alert(cheap_books):
@@ -73,8 +83,14 @@ def check_prices():
     print("Checking book prices")
     books = scrape_all_books()
     cheap_books = [b for b in books if b['price'] < PRICE_THRESHOLD]
+
+    # Save all books
+    save_books_to_csv(books, "all_books.csv")
+
+    # Save discounted books
     if cheap_books:
-        print(f"Found {len(cheap_books)} books below £{PRICE_THRESHOLD}")
+        timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        save_books_to_csv(cheap_books, f"discounted_books_{timestamp}.csv")
         send_email_alert(cheap_books)
     else:
         print("No books found below threshold.")
